@@ -1,4 +1,6 @@
-data/
+data/*
+!data/*.rar
+!data/holidays
 
 .DS_Store
 .huskyrc.json
