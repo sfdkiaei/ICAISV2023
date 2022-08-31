@@ -3,3 +3,6 @@ patool==1.12
 tqdm==4.64.0
 pyod==1.0.4
 openpyxl==3.0.10
+hazm==0.7.0
+irholiday==0.1.8
+jdatetime==4.1.0
