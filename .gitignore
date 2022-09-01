@@ -50,3 +50,5 @@ dist/**
 *.xlf
 *.nls.*.json
 *.i18n.json
+.vscode
+.ipynb_checkpoints

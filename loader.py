@@ -27,12 +27,17 @@ class Loader:
                 patoolib.extract_archive(file, outdir=outputpath)
 
     def create_df_from_xlsx(self):
-        if self.hourly:
-            files = glob.glob("data/*/*/‫حجم تردد ساعتی‬/*.xlsx")
-        else:
-            files = glob.glob("data/*/*/‫حجم تردد روزانه‬/*.xlsx")
+        self.files = []
+        for root, dirs, files in os.walk("./"):
+            for file in files:
+                if file.endswith(".xlsx") and (
+                    (file.startswith("Hourly") and self.hourly)
+                    or (file.startswith("Daily") and not self.hourly)
+                ):
+                    self.files.append(os.path.join(root, file))
+                    print(self.files)
         df = pd.DataFrame()
-        for f in tqdm(files, desc="Loading"):
+        for f in tqdm(self.files, desc="Loading"):
             data = pd.read_excel(f, "Sheet1", header=1)
             cols = data.columns
             cols_normalized = [
@@ -80,6 +85,7 @@ class Loader:
 
 if __name__ == "__main__":
     loader = Loader()
-    # df = loader.create_df_from_xlsx()
-    # loader.save_df(df)
-    # print(loader.load_df().shape)
+    df = loader.create_df_from_xlsx()
+    df = loader.process_df(df)
+    loader.save_df(df)
+    print(loader.load_df().shape)
