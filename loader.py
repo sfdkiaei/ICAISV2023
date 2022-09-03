@@ -4,6 +4,7 @@ import glob
 import pandas as pd
 from tqdm import tqdm
 import jdatetime
+from jdatetime import date
 import pickle
 from hazm import Normalizer
 
@@ -35,7 +36,7 @@ class Loader:
                     or (file.startswith("Daily") and not self.hourly)
                 ):
                     self.files.append(os.path.join(root, file))
-                    print(self.files)
+        # print(self.files)
         df = pd.DataFrame()
         for f in tqdm(self.files, desc="Loading"):
             data = pd.read_excel(f, "Sheet1", header=1)
@@ -45,23 +46,24 @@ class Loader:
                 for col in cols
             ]
             data.columns = cols_normalized
-            df = pd.concat([df, data])
+            df = pd.concat([df, data], ignore_index=True)
         return df
 
     def process_df(self, df: pd.DataFrame):
         delete_columns = ["زمان پایان", "زمان شروع", "نام محور"]
         for idx, row in tqdm(df.iterrows(), total=df.shape[0], desc="Processing"):
             holiday = False
-            date = row["زمان شروع"].split(" ")[0]
-            time = row["زمان شروع"].split(" ")[1]
-            if date in self.holidays:
+            _date, time = row["زمان شروع"].split(" ")
+            if _date in self.holidays:
                 holiday = True
             df.loc[idx, "holiday"] = holiday
-            year = int(date.split("/")[0])
-            month = int(date.split("/")[1])
-            day = int(date.split("/")[2])
-            d = jdatetime.date(year, month, day)
-            df.loc[idx, "date"] = d
+            year, month, day = _date.split("/")
+            if day.startswith("0"):
+                day = day[1]
+            if month.startswith("0"):
+                month = month[1]
+            d = date(int(year), int(month), int(day), locale="fa_IR")
+            df.loc[idx, "date"] = d.strftime("%Y-%m-%d")
             df.loc[idx, "day_of_week"] = str(d.weekday())  # Shanbeh: 0
             df.loc[idx, "time_start"] = time
             if row["کد محور"] not in self.roads:
@@ -70,6 +72,7 @@ class Loader:
             pickle.dump(self.roads, f)
         for col in delete_columns:
             df = df.drop(col, axis=1)
+        df = df.sort_values(("date"))
         return df
 
     def save_df(self, df: pd.DataFrame):
